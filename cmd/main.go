@@ -14,11 +14,11 @@ var rnd = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func main() {
 	wg := &sync.WaitGroup{}
-	m := &sync.Mutex{}
+	m := &sync.RWMutex{}
 	for i := 0; i < 10; i++ {
 		id := rnd.Intn(10) + 1
 		wg.Add(2) // we should add 1 for each goroutine
-		go func(id int, wg *sync.WaitGroup, m *sync.Mutex) {
+		go func(id int, wg *sync.WaitGroup, m *sync.RWMutex) {
 			if b, ok := queryCache(id, m); ok {
 				fmt.Println("from cache")
 				fmt.Println(b)
@@ -26,9 +26,10 @@ func main() {
 			wg.Done()
 		}(id, wg, m)
 		// wg.Add(1) we add 2 above. Thats why we do not need to add 1 here
-		go func(id int, wg *sync.WaitGroup, m *sync.Mutex) {
+		go func(id int, wg *sync.WaitGroup, m *sync.RWMutex) {
 			if b, ok := queryDatabase(id); ok {
 				fmt.Println("from database")
+				// this will lock other writers and readers.
 				m.Lock()
 				cache[id] = b
 				m.Unlock()
@@ -41,11 +42,11 @@ func main() {
 	wg.Wait()
 }
 
-func queryCache(id int, m *sync.Mutex) (database.Book, bool) {
-	// locking also the reading is a bit inefficient because there is no harm in multple readings.
-	m.Lock()
+func queryCache(id int, m *sync.RWMutex) (database.Book, bool) {
+	// this will allow multiple readers but not writers.
+	m.RLock()
 	b, ok := cache[id]
-	m.Unlock()
+	m.RUnlock()
 	return b, ok
 }
 
