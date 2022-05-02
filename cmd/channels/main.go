@@ -10,16 +10,17 @@ func main() {
 	ch := make(chan int) // bidirectional channel
 	wg.Add(2)
 
+	// as we know the sender and the receiver need to send receive the same number of messages.
+	// otherwise we are generating a deadlock.
 	go func(wg *sync.WaitGroup, ch chan<- int) {
-		// ch <- 42
-		close(ch)
+		for i := 0; i < 10; i++ {
+			ch <- i
+		}
 		wg.Done()
 	}(wg, ch)
 	go func(wg *sync.WaitGroup, ch <-chan int) {
-		if msg, isChannelOpen := <-ch; isChannelOpen {
-			fmt.Println(msg)
-		} else {
-			fmt.Println("Channel is closed!")
+		for i := 0; i < 10; i++ {
+			fmt.Println(<-ch)
 		}
 		wg.Done()
 	}(wg, ch)
