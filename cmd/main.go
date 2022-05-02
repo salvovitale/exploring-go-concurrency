@@ -12,6 +12,7 @@ import (
 var cache = map[int]database.Book{}
 var rnd = rand.New(rand.NewSource(time.Now().UnixNano()))
 
+// the current code does not have any logic to decided from where to print if from chache or db.
 func main() {
 	wg := &sync.WaitGroup{}
 	m := &sync.RWMutex{}
@@ -37,6 +38,7 @@ func main() {
 			}
 			wg.Done()
 		}(id, wg, m)
+		time.Sleep(150 * time.Millisecond)
 	}
 	// now we can replace the time sleep with the proper tool
 	wg.Wait()
@@ -51,7 +53,7 @@ func queryCache(id int, m *sync.RWMutex) (database.Book, bool) {
 }
 
 func queryDatabase(id int) (database.Book, bool) {
-	time.Sleep(300 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 	for _, b := range database.GetBooks() {
 		if b.ID == id {
 			return b, true
